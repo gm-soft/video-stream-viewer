@@ -32,9 +32,12 @@
             ],
             "styles": [
               "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "./node_modules/video.js/dist/video-js.css",
               "src/styles.scss"
             ],
-            "scripts": []
+            "scripts": [
+              "./node_modules/video.js/dist/video.js"
+            ]
           },
           "configurations": {
             "production": {
