@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { webSocket } from "rxjs/webSocket";
 
 @Component({
@@ -7,7 +8,7 @@ import { webSocket } from "rxjs/webSocket";
   styleUrls: ['./video-player.component.scss']
 })
 export class VideoPlayerComponent implements OnInit {
-  constructor() {
+  constructor(private sanitizer: DomSanitizer) {
     this.initWebSocketSubject();
   }
 
@@ -22,10 +23,39 @@ export class VideoPlayerComponent implements OnInit {
     return this.url != null;
   }
 
-  url: string | null = null;
+  url: string | null | SafeUrl = null;
 
   ngOnInit(): void {
     this.url = '';
+  }
+
+  private createBase64Url(data: string) {
+    var request = new XMLHttpRequest();
+    request.responseType = "blob";
+
+    const self = this;
+
+    request.onload = function() {
+      console.log(this.response);
+      console.log(URL.createObjectURL(this.response));
+
+      // Obtain a blob: URL for the image data.
+      var arrayBufferView = new Uint8Array( this.response );
+      var blob = new Blob( [ arrayBufferView ], { type: "image/jpeg" } );
+      var urlCreator = window.URL || window.webkitURL;
+      var imageUrl = urlCreator.createObjectURL( blob );
+      var img = document.querySelector( "#photo" );
+      self.url = self.sanitizer.bypassSecurityTrustUrl(imageUrl);
+    }
+
+    request.open("GET", data);
+    request.send();
+  }
+
+  private replaceBase64Url(data: string) {
+    console.log(data);
+    const replaced = data.replace('data:application/octet-stream;', 'data:image/jpeg;');
+    this.url = this.sanitizer.bypassSecurityTrustUrl(replaced);
   }
 
   // ---------------
@@ -36,10 +66,23 @@ export class VideoPlayerComponent implements OnInit {
       serializer: (value) => JSON.stringify(value),
     });
 
+    const blobToBase64 = (blob: Blob): Promise<string> => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      return new Promise<string>(resolve => {
+        reader.onloadend = () => {
+          resolve(reader.result as string);
+        };
+      });
+    };
+
     subject.subscribe(
-      msg =>{
+      (msg: any) => {
         // Called whenever there is a message from the server.
-        console.log(msg); 
+        var event = msg as MessageEvent<Blob>;
+        blobToBase64(event.data).then(base64 => {
+          this.createBase64Url(base64);
+        });
       },
       err => {
         // Called if at any point WebSocket API signals some kind of error.
@@ -72,17 +115,22 @@ export class VideoPlayerComponent implements OnInit {
           isSoundOn: false,
           soundFormat: 0
         },
-        isSoundOn: false,
-        soundFormat: 0,
         videoStreamParameters: {
           streamType: "main",
           streamFormat: "mjpeg"
         },
-        streamFormat: "mjpeg",
-        streamType: "main",
       },
       requestId: this.uuidv4(),
       commandType: 1,
     });
+  }
+
+  private blobToBase64(blob: any){
+    var reader = new FileReader();
+    reader.readAsDataURL(blob); 
+    reader.onloadend = function() {
+        var base64data = reader.result;                
+        console.log(base64data);
+    }
   }
 }
