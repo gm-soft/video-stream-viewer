@@ -1,3 +1,15 @@
-  <img *ngIf="show"
-        style="-webkit-user-select: none;"
-        [attr.src]="url" width="1037" height="583">
+<div>
+  <div class="w-100">
+    <img *ngIf="show"
+      style="-webkit-user-select: none;"
+      [attr.src]="url" width="1037" height="583">
+  </div>
+
+  <div class="mt-3">
+    <button class="btn btn-outline-danger" (click)="stop()" *ngIf="started;else notstarted">Stop</button>
+
+    <ng-template #notstarted>
+      <button class="btn btn-primary" (click)="start()">Start</button>
+    </ng-template>
+  </div>
+</div>
