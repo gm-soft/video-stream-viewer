@@ -23,6 +23,7 @@ export class VideoPlayerComponent implements OnInit, IImageUrlReceiver {
   }
 
   url: string | null | SafeUrl = null;
+  error: string | null = null;
 
   ngOnInit(): void {
     this.url = '';
@@ -30,6 +31,7 @@ export class VideoPlayerComponent implements OnInit, IImageUrlReceiver {
   }
 
   start(): void {
+    this.error = null;
     this.imageReceiver.start();
   }
 
@@ -39,5 +41,9 @@ export class VideoPlayerComponent implements OnInit, IImageUrlReceiver {
 
   onImageUrlLoad(imageUrl: string): void {
     this.url = imageUrl;
+  }
+
+  onError(error: string): void {
+    this.error = error;
   }
 }

@@ -49,12 +49,11 @@ export class FileReceiver {
         };
 
         this.image.onerror = function() {
-            console.log('onerror');
+            self._receiver.onError("Image could not been loaded");
             self.stop();
         };
 
         this.image.oncancel = function() {
-            console.log('oncancel');
             self.stop();
         };
 
@@ -66,7 +65,6 @@ export class FileReceiver {
             return;
         }
 
-        console.log('stopped');
         clearInterval(this.intervalId);
         this.intervalId = null;
     }
