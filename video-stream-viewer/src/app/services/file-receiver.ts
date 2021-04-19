@@ -1,12 +1,13 @@
+import { environment } from "src/environments/environment";
 import { IImageUrlReceiver } from "./iimage-url-receiver";
 
 export class FileReceiver {
 
     // https://cloud2.macroscop.com:18080/video?channelid=3329c69b-17e4-4d3b-9fcc-542bdfaefbe1&login=user3141400&password=78302615C8B79CAC8DF6D2607F8A83EE
-	private readonly serverUrl = "https://cloud2.macroscop.com:18080"
-	private readonly login = "user3141400"
-	private readonly password = "78302615C8B79CAC8DF6D2607F8A83EE";
-	// private readonly channelid = "3329c69b-17e4-4d3b-9fcc-542bdfaefbe1";
+	private readonly serverUrl = environment.macroscopeUrl;
+	private readonly login = environment.login;
+	private readonly password = environment.password;
+
 	private readonly drawHeight = 432;
 	private readonly drawWidth = Number(this.drawHeight * 1.337).toFixed(0);
     private readonly delay = 100;
@@ -18,29 +19,45 @@ export class FileReceiver {
 
     get started(): boolean { return this.intervalId != null; }
 
-    constructor(private readonly channelid: string, private readonly _receiver: IImageUrlReceiver) {
+    constructor(
+        private readonly channelid: string,
+        private readonly _receiver: IImageUrlReceiver) {
         this.serverFullUrl = this.serverUrl + "/site?login=" + this.login + "&password=" + this.password +"&channelid=" + channelid + "&resolutionX=" + this.drawWidth + "&resolutionY=" + this.drawHeight;
     }
 
     start(): void {
+        this.stop();
         this.intervalId = setInterval(() => {
             this.loading();
         }, this.delay);
-		this.image.onload = this.showimage;
-		this.image.src = this.serverFullUrl + "&id=" + new Date().getTime();
     }
 
     private showimage(): void
 	{
         this._receiver.onImageUrlLoad(this.image.src);
 
-		setTimeout(() => {
+		this.intervalId = setTimeout(() => {
             this.loading();
         }, this.delay); 
     }
 
     private loading(): void
 	{
+        const self = this;
+        this.image.onload = function(){
+            self.showimage();
+        };
+
+        this.image.onerror = function() {
+            console.log('onerror');
+            self.stop();
+        };
+
+        this.image.oncancel = function() {
+            console.log('oncancel');
+            self.stop();
+        };
+
 		this.image.src = this.serverFullUrl + "&id=" + new Date().getTime();
     }
 
@@ -49,6 +66,7 @@ export class FileReceiver {
             return;
         }
 
+        console.log('stopped');
         clearInterval(this.intervalId);
         this.intervalId = null;
     }
