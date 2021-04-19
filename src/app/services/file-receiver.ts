@@ -12,7 +12,6 @@ export class FileReceiver {
 	private readonly drawWidth = Number(this.drawHeight * 1.337).toFixed(0);
     private readonly delay = 100;
 
-    private image = new Image();
     private intervalId: NodeJS.Timeout | null = null;
 
     private serverFullUrl: string;
@@ -32,32 +31,26 @@ export class FileReceiver {
         }, this.delay);
     }
 
-    private showimage(): void
-	{
-        this._receiver.onImageUrlLoad(this.image.src);
-
-		this.intervalId = setTimeout(() => {
-            this.loading();
-        }, this.delay); 
-    }
-
     private loading(): void
 	{
         const self = this;
-        this.image.onload = function(){
-            self.showimage();
+        const image = new Image();
+
+        image.onload = function() {
+            self._receiver.onImageUrlLoad(image.src);
         };
 
-        this.image.onerror = function() {
+        image.onerror = function() {
             self._receiver.onError("Image could not been loaded");
+            console.log('error occured');
             self.stop();
         };
 
-        this.image.oncancel = function() {
+        image.oncancel = function() {
             self.stop();
         };
 
-		this.image.src = this.serverFullUrl + "&id=" + new Date().getTime();
+		image.src = this.serverFullUrl + "&id=" + new Date().getTime();
     }
 
     stop(): void {
