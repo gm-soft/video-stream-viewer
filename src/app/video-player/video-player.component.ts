@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 import { FileReceiver } from '../services/file-receiver';
 import { IImageUrlReceiver } from '../services/iimage-url-receiver';
+import { ComponentState } from './component-state';
 
 @Component({
   selector: 'app-video-player',
@@ -10,13 +12,14 @@ import { IImageUrlReceiver } from '../services/iimage-url-receiver';
 })
 export class VideoPlayerComponent implements OnInit, IImageUrlReceiver {
 
-  get started(): boolean { return this.imageReceiver.started; }
+  get started(): boolean { return this.imageReceiver != null ? this.imageReceiver.started : false; }
+  get hasData(): boolean { return this.state === ComponentState.HasData; }
+  get noData(): boolean { return this.state === ComponentState.NoData; }
 
-  private readonly imageReceiver: FileReceiver;
+  private imageReceiver: FileReceiver | null = null;
+  private state = ComponentState.Initiated;
 
-  constructor() {
-    this.imageReceiver = new FileReceiver("3329c69b-17e4-4d3b-9fcc-542bdfaefbe1", this);
-  }
+  constructor(private readonly route: ActivatedRoute) {}
 
   get show(): boolean {
     return this.url != null;
@@ -27,16 +30,30 @@ export class VideoPlayerComponent implements OnInit, IImageUrlReceiver {
 
   ngOnInit(): void {
     this.url = '';
-    this.imageReceiver.start();
+
+    this.route.queryParams.subscribe(params => {
+        const channelId = params['channel'] as string;
+
+
+        if (channelId == null) {
+          this.state = ComponentState.NoData;
+          return;
+        }
+
+        // 3329c69b-17e4-4d3b-9fcc-542bdfaefbe1
+        this.imageReceiver = new FileReceiver(channelId, this);
+        this.state = ComponentState.HasData;
+        this.imageReceiver.start();
+    });
   }
 
   start(): void {
     this.error = null;
-    this.imageReceiver.start();
+    this.imageReceiver?.start();
   }
 
   stop(): void {
-    this.imageReceiver.stop();
+    this.imageReceiver?.stop();
   }
 
   onImageUrlLoad(imageUrl: string): void {
